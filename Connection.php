@@ -296,11 +296,17 @@ class Connection implements ConnectionInterface {
 			// For select statements, we'll simply execute the query and return an array
 			// of the database result set. Each element in the array will be a single
 			// row from the database table, and will either be an array or objects.
-			$statement = $this->getPdoForSelect($useReadPdo)->prepare($query);
+                        $pdoSelect = $this->getPdoForSelect($useReadPdo);
+                        $pdoSelect->setAttribute(PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, true);
+                        $pdoSelect->setAttribute(PDO::ATTR_EMULATE_PREPARES, true);
+                        $statement = $pdoSelect->prepare($query);
 
-			$statement->execute($me->prepareBindings($bindings));
+                        $statement->execute($me->prepareBindings($bindings));
 
-			return $statement->fetchAll($me->getFetchMode());
+                        $result = $statement->fetchAll($me->getFetchMode());
+                        $statement->closeCursor();
+                        unset($statement);
+                        return $result;
 		});
 	}
 
